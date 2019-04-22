@@ -11,6 +11,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tkinter
 import serial
+import matplotlib
+import tkinter as tk
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+import matplotlib.backends.tkagg as tkagg
 
 class DataHistory:
     def __init__(self):
@@ -53,6 +58,75 @@ class DataHistory:
         self.ax[2].plot(self.light,'k-^')
         self.fig.canvas.draw()
   
+
+
+class DataPlot():
+    def __init__(self,name,canvas):
+        self.title=name
+        self.temp=[0,0]
+        self.humidity=[1,1]
+        self.light=[2,2]
+        font = {'size' : 12}  
+        matplotlib.rc('font', **font)
+        self.theFig = Figure(figsize=(8, 4.35), dpi=100)
+        self.axis=self.theFig.add_subplot(111)
+        self.plotCanvas=canvas
+        self.plotType="temp"
+        self.UpdatePlot()
+    def ClearPlot(self):
+        self.axis.clear()
+        self.theplot=self.draw_figure(self.plotCanvas,self.theFig)
+    def UpdatePlot(self):
+        self.ClearPlot()
+        self.axis.set_xlabel("Date")
+        if self.plotType=="temp":
+            self.axis.plot(self.temp,'r-s')
+            self.axis.set_title("Temperature")
+            self.axis.set_ylabel("Celsius")
+        elif self.plotType=="humidity":
+            self.axis.plot(self.humidity,'b-o')
+            self.axis.set_title("Humidity")
+            self.axis.set_ylabel("Relative Humidity (%)")
+        elif self.plotType=="light":
+            self.axis.plot(self.light,'k-^')
+            self.axis.set_title("Light Level")
+            self.axis.set_ylabel("LUX")
+        self.theplot=self.draw_figure(self.plotCanvas,self.theFig)
+    def AddNewDataPoint(self,ttemp,tlight,thumidity):
+        if len(self.temp) < 200:
+            self.temp.append(ttemp)
+            self.light.append(tlight)
+            self.humidity.append(thumidity)
+            self.UpdatePlot()
+        else:
+            self.temp=np.roll(self.temp,-1)
+            self.temp[199]=ttemp
+            self.light=np.roll(self.light,-1)
+            self.light[199]=tlight
+            self.humidity=np.roll(self.humidity,-1)
+            self.humidity[199]=thumidity
+            self.UpdatePlot()
+    def draw_figure(self,canvas, figure, loc=(0, 0)):
+        """ Draw a matplotlib figure onto a Tk canvas
+        loc: location of top-left corner of figure on canvas in pixels.
+        Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
+        """
+        figure_canvas_agg = FigureCanvasAgg(figure)
+        figure_canvas_agg.draw()
+        figure_x, figure_y, figure_w, figure_h = figure.bbox.bounds
+        figure_w, figure_h = int(figure_w), int(figure_h)
+        photo = tk.PhotoImage(master=canvas, width=figure_w, height=figure_h)
+
+        # Position: convert from top-left anchor to center anchor
+        canvas.create_image(loc[0] + figure_w/2, loc[1] + figure_h/2, image=photo)
+        #canvas.create_image(loc[0], loc[1], image=photo)
+        # Unfortunately, there's no accessor for the pointer to the native renderer
+        tkagg.blit(photo, figure_canvas_agg.get_renderer()._renderer, colormode=2)
+
+        # Return a handle which contains a reference to the photo object
+        # which must be kept live or else the picture disappears
+        return photo
+
 class MyUART:
     def __init__(self, ID):
         self.thePort=serial.Serial('/dev/ttyS0',19200)
@@ -77,9 +151,7 @@ class MyUART:
             else:
                 print('not for me')
                 
-                
-
-
+            
 class TSL2561:
     def __init__(self,i2c):
         self.__Initialize(i2c)
@@ -180,3 +252,16 @@ class SI7021:
     def GetHumidity(self):
         return self.theSensor.relative_humidity
 
+class MonitoringHardware():
+    def __init__(self):
+        self.i2c = busio.I2C(board.SCL, board.SDA)
+        self.tsl = TSL2561(self.i2c)
+        self.si =  SI7021(self.i2c)
+        self.theServer = MyServer()
+        self.theUART=MyUART(0x01)
+        _thread.start_new_thread(self.theServer.Start,())
+        _thread.start_new_thread(self.theUART.StartListening,())
+    def UpdateReadings(self):
+        self.temperature=self.si.GetTemperature()
+        self.light=self.tsl.GetLUX()
+        self.humidity=self.si.GetHumidity()

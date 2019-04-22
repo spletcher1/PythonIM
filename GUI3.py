@@ -8,7 +8,7 @@ import matplotlib
 
 import numpy as np
 
-class MyPlot():
+class DataPlot():
     def __init__(self,name,canvas):
         self.title=name
         self.temp=[0,0]
@@ -45,7 +45,7 @@ class MyPlot():
             self.light.append(tlight)
             self.humidity.append(thumidity)
             self.UpdatePlot()
-        else :
+        else:
             self.temp=np.roll(self.temp,-1)
             self.temp[199]=ttemp
             self.light=np.roll(self.light,-1)
@@ -87,7 +87,7 @@ class App():
         self.light_button.grid(column=2,row=0)
         self.plotCanvas = tk.Canvas(master, width=2000, height=1500)
         self.plotCanvas.grid(columnspan=3)
-        self.thePlot=MyPlot("test",self.plotCanvas)
+        self.thePlot=DataPlot("test",self.plotCanvas)
         self.UpdateData()
     def getPlot(self):
         return self.thePlot
@@ -111,6 +111,5 @@ class App():
 
 root=tk.Tk()
 myGui=App(root)
-#tmp=MyPlot("terst",root)
 root.mainloop()
 

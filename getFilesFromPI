@@ -5,7 +5,7 @@
 
 IP=192.168.1.245
 
-pscp -pw dr0m3l scott@$IP:Programming/Python/IncubatorMonitor/MonitorClasses.py ./
+pscp -pw dr0m3l ./MonitorClasses.py scott@$IP:Programming/Python/IncubatorMonitor/MonitorClasses.py ./
 pscp -pw dr0m3l scott@$IP:Programming/Python/IncubatorMonitor/MonitorMain.py ./
 pscp -pw dr0m3l scott@$IP:Programming/Python/IncubatorMonitor/test.py ./
 

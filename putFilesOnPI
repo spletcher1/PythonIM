@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# ETH=192.168.1.??
+# WIFI = 192.168.1.245
+
+#IP=192.168.1.245
+IP=192.168.0.99
+
+pscp -pw dr0m3l ./MonitorClasses.py scott@$IP:Programming/Python/IncubatorMonitor/MonitorClasses.py
+pscp -pw dr0m3l ./MonitorMain.py scott@$IP:Programming/Python/IncubatorMonitor/MonitorMain.py
+
