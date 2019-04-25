@@ -3,6 +3,7 @@ import digitalio
 import busio
 import time
 import adafruit_tsl2561
+import adafruit_tsl2591
 import adafruit_si7021
 import _thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -11,6 +12,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tkinter
 import serial
+import matplotlib
+import tkinter as tk
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+import matplotlib.backends.tkagg as tkagg
 
 class DataHistory:
     def __init__(self):
@@ -53,6 +59,75 @@ class DataHistory:
         self.ax[2].plot(self.light,'k-^')
         self.fig.canvas.draw()
   
+
+
+class DataPlot():
+    def __init__(self,name,canvas):
+        self.title=name
+        self.temp=[0,0]
+        self.humidity=[1,1]
+        self.light=[2,2]
+        font = {'size' : 12}  
+        matplotlib.rc('font', **font)
+        self.theFig = Figure(figsize=(8, 4.35), dpi=100)
+        self.axis=self.theFig.add_subplot(111)
+        self.plotCanvas=canvas
+        self.plotType="temp"
+        self.UpdatePlot()
+    def ClearPlot(self):
+        self.axis.clear()
+        self.theplot=self.draw_figure(self.plotCanvas,self.theFig)
+    def UpdatePlot(self):
+        self.ClearPlot()
+        self.axis.set_xlabel("Date")
+        if self.plotType=="temp":
+            self.axis.plot(self.temp,'r-s')
+            self.axis.set_title("Temperature")
+            self.axis.set_ylabel("Celsius")
+        elif self.plotType=="humidity":
+            self.axis.plot(self.humidity,'b-o')
+            self.axis.set_title("Humidity")
+            self.axis.set_ylabel("Relative Humidity (%)")
+        elif self.plotType=="light":
+            self.axis.plot(self.light,'k-^')
+            self.axis.set_title("Light Level")
+            self.axis.set_ylabel("LUX")
+        self.theplot=self.draw_figure(self.plotCanvas,self.theFig)
+    def AddNewDataPoint(self,ttemp,tlight,thumidity):
+        if len(self.temp) < 200:
+            self.temp.append(ttemp)
+            self.light.append(tlight)
+            self.humidity.append(thumidity)
+            self.UpdatePlot()
+        else:
+            self.temp=np.roll(self.temp,-1)
+            self.temp[199]=ttemp
+            self.light=np.roll(self.light,-1)
+            self.light[199]=tlight
+            self.humidity=np.roll(self.humidity,-1)
+            self.humidity[199]=thumidity
+            self.UpdatePlot()
+    def draw_figure(self,canvas, figure, loc=(0, 0)):
+        """ Draw a matplotlib figure onto a Tk canvas
+        loc: location of top-left corner of figure on canvas in pixels.
+        Inspired by matplotlib source: lib/matplotlib/backends/backend_tkagg.py
+        """
+        figure_canvas_agg = FigureCanvasAgg(figure)
+        figure_canvas_agg.draw()
+        figure_x, figure_y, figure_w, figure_h = figure.bbox.bounds
+        figure_w, figure_h = int(figure_w), int(figure_h)
+        photo = tk.PhotoImage(master=canvas, width=figure_w, height=figure_h)
+
+        # Position: convert from top-left anchor to center anchor
+        canvas.create_image(loc[0] + figure_w/2, loc[1] + figure_h/2, image=photo)
+        #canvas.create_image(loc[0], loc[1], image=photo)
+        # Unfortunately, there's no accessor for the pointer to the native renderer
+        tkagg.blit(photo, figure_canvas_agg.get_renderer()._renderer, colormode=2)
+
+        # Return a handle which contains a reference to the photo object
+        # which must be kept live or else the picture disappears
+        return photo
+
 class MyUART:
     def __init__(self, ID):
         self.thePort=serial.Serial('/dev/ttyS0',19200)
@@ -77,8 +152,66 @@ class MyUART:
             else:
                 print('not for me')
                 
-                
-
+class TSL2591:
+    def __init__(self,i2c):
+        self.__Initialize(i2c)
+    def __Initialize(self, i2c):
+        self.theSensor = adafruit_tsl2591.TSL2591(i2c)
+        self.theSensor.enabled=True
+        # Enable the light sensor
+        self.theSensor.enabled = True
+        # Set gain 0=16x, 1=1x
+        self.theSensor.gain = adafruit_tsl2591.GAIN_MED 
+        # Set integration time (0=13.7ms, 1=101ms, 2=402ms, or 3=manual)
+        self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_100MS
+    def Set100msIntegrationTime(self):
+        self.theSensor.integration_time=adafruit_tsl2591.INTEGRATIONTIME_100MS
+    def Set200msIntegrationTime(self):
+        self.theSensor.integration_time=adafruit_tsl2591.INTEGRATIONTIME_200MS
+    def Set300msIntegrationTime(self):
+        self.theSensor.integration_time=adafruit_tsl2591.INTEGRATIONTIME_300MS
+    def Set400msIntegrationTime(self):
+        self.theSensor.integration_time=adafruit_tsl2591.INTEGRATIONTIME_400MS
+    def Set500msIntegrationTime(self):
+        self.theSensor.integration_time=adafruit_tsl2591.INTEGRATIONTIME_500MS
+    def Set600msIntegrationTime(self):
+        self.theSensor.integration_time=adafruit_tsl2591.INTEGRATIONTIME_600MS
+    def SetGainLow(self):
+        self.theSensor.gain = adafruit_tsl2591.GAIN_LOW
+    def SetGainMedium(self):
+        self.theSensor.gain = adafruit_tsl2591.GAIN_MED
+    def SetGainHigh(self):
+        self.theSensor.gain = adafruit_tsl2591.GAIN_HIGH
+    def SetGainMax(self):
+        self.theSensor.gain = adafruit_tsl2591.GAIN_MAX
+    def PrintAllInfo(self):
+        #Get raw (luminosity) readings individually
+        broadband = self.theSensor.broadband
+        infrared = self.theSensor.infrared
+        # Get raw (luminosity) readings using tuple unpacking
+        #broadband, infrared = tsl.luminosity
+        # Get computed lux value (tsl.lux can return None or a float)
+        lux = self.theSensor.lux
+        print("Chip ID = {}".format(self.theSensor.chip_id))
+        print("Enabled = {}".format(self.theSensor.enabled))
+        print("Gain = {}".format(self.theSensor.gain))
+        print("Integration time = {}".format(self.theSensor.integration_time))
+        print("Broadband = {}".format(broadband))
+        print("Infrared = {}".format(infrared))
+        if lux is not None:
+            print("Lux = {}".format(lux))
+        else:
+            print("Lux value is None. Possible sensor underrange or overrange.")   
+    def GetLUX(self):
+        lux = self.theSensor.lux
+        if(lux=="None"):
+            if(self.theSensor.gain==0):
+                self.SetLowGain()
+            elif(self.theSensor.gane==1):
+                self.SetHighGain()                
+            time.sleep(0.5)
+            lux = self.theSensor.lux
+        return lux
 
 class TSL2561:
     def __init__(self,i2c):
@@ -100,18 +233,18 @@ class TSL2561:
         self.theSensor.integration_time=2
     def PrintAllInfo(self):
         #Get raw (luminosity) readings individually
-        broadband = self.theSensor.broadband
+        visible = self.theSensor.visible
         infrared = self.theSensor.infrared
+        fullspectrum = self.theSensor.fullspectrum
         # Get raw (luminosity) readings using tuple unpacking
         #broadband, infrared = tsl.luminosity
         # Get computed lux value (tsl.lux can return None or a float)
         lux = self.theSensor.lux
-        print("Chip ID = {}".format(self.theSensor.chip_id))
-        print("Enabled = {}".format(self.theSensor.enabled))
         print("Gain = {}".format(self.theSensor.gain))
         print("Integration time = {}".format(self.theSensor.integration_time))
-        print("Broadband = {}".format(broadband))
+        print("Visible Light = {}".format(visible))
         print("Infrared = {}".format(infrared))
+        print("Full spectrum = {}".format(fullspectrum))
         if lux is not None:
             print("Lux = {}".format(lux))
         else:
@@ -180,3 +313,16 @@ class SI7021:
     def GetHumidity(self):
         return self.theSensor.relative_humidity
 
+class MonitoringHardware():
+    def __init__(self):
+        self.i2c = busio.I2C(board.SCL, board.SDA)
+        self.tsl = TSL2561(self.i2c)
+        self.si =  SI7021(self.i2c)
+        self.theServer = MyServer()
+        self.theUART=MyUART(0x01)
+        _thread.start_new_thread(self.theServer.Start,())
+        _thread.start_new_thread(self.theUART.StartListening,())
+    def UpdateReadings(self):
+        self.temperature=self.si.GetTemperature()
+        self.light=self.tsl.GetLUX()
+        self.humidity=self.si.GetHumidity()
