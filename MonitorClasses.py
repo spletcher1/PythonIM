@@ -18,6 +18,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import matplotlib.backends.tkagg as tkagg
 
+
+
 class DataHistory:
     def __init__(self):
         self.temp=np.zeros(200)
@@ -139,6 +141,9 @@ class MyUART:
         self.endByte=0x23   #'#'
     def Write(self,s):
         self.thePort.write(s.encode())
+    def GetDataString(self):
+        tmp = "%d;%f;%f;%f" % (self.ID,self.temperature,self.light,self.humidity)
+        return tmp
     def SetData(self,temp,light,humidity):
         self.temperature = temp
         self.light=light
@@ -147,8 +152,9 @@ class MyUART:
         while True:
             ser_bytes=self.thePort.read(3)
             if(ser_bytes[0]==self.startByte and ser_bytes[2]==self.endByte and ser_bytes[1]==self.ID):
-                tmp = "<html><body>temp=%f;light=%f,humidity=%f</body></html>" % (self.temperature,self.light,self.humidity,)
+                tmp = self.GetDataString()
                 print(tmp)
+                self.Write(tmp)
             else:
                 print('not for me')
                 
@@ -160,10 +166,10 @@ class TSL2591:
         self.theSensor.enabled=True
         # Enable the light sensor
         self.theSensor.enabled = True
-        # Set gain 0=16x, 1=1x
+        # Set default gain (LOW = 1; MED=25; HIGH=428; MAX=9876)
         self.theSensor.gain = adafruit_tsl2591.GAIN_MED 
-        # Set integration time (0=13.7ms, 1=101ms, 2=402ms, or 3=manual)
-        self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_100MS
+        # Set integration time (intervals of 100ms)
+        self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_300MS
     def Set100msIntegrationTime(self):
         self.theSensor.integration_time=adafruit_tsl2591.INTEGRATIONTIME_100MS
     def Set200msIntegrationTime(self):
@@ -185,33 +191,72 @@ class TSL2591:
     def SetGainMax(self):
         self.theSensor.gain = adafruit_tsl2591.GAIN_MAX
     def PrintAllInfo(self):
-        #Get raw (luminosity) readings individually
-        broadband = self.theSensor.broadband
-        infrared = self.theSensor.infrared
-        # Get raw (luminosity) readings using tuple unpacking
-        #broadband, infrared = tsl.luminosity
-        # Get computed lux value (tsl.lux can return None or a float)
-        lux = self.theSensor.lux
-        print("Chip ID = {}".format(self.theSensor.chip_id))
-        print("Enabled = {}".format(self.theSensor.enabled))
-        print("Gain = {}".format(self.theSensor.gain))
-        print("Integration time = {}".format(self.theSensor.integration_time))
-        print("Broadband = {}".format(broadband))
-        print("Infrared = {}".format(infrared))
-        if lux is not None:
-            print("Lux = {}".format(lux))
+            visible = self.theSensor.visible
+            infrared = self.theSensor.infrared
+            fullspectrum = self.theSensor.full_spectrum
+            lux = self.GetLUX()
+            if(lux != -99) : 
+                print("Gain = {}".format(self.theSensor.gain))
+                print("Integration time = {}".format(self.theSensor.integration_time))
+                print("Visible Light = {}".format(visible))
+                print("Infrared = {}".format(infrared))
+                print("Full spectrum = {}".format(fullspectrum))
+                print("Lux = {}".format(lux))
+            else :
+                print("Adjusting sensitivity...")
+
+    def IncreaseSensitivity(self):
+        isMaxedOut=False
+        if self.theSensor.gain == adafruit_tsl2591.GAIN_LOW :
+            self.theSensor.gain = adafruit_tsl2591.GAIN_MED
+        elif self.theSensor.gain == adafruit_tsl2591.GAIN_MED :
+            self.theSensor.gain = adafruit_tsl2591.GAIN_HIGH
+        elif self.theSensor.integration_time == adafruit_tsl2591.INTEGRATIONTIME_100MS :
+            self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_200MS
+        elif self.theSensor.integration_time == adafruit_tsl2591.INTEGRATIONTIME_200MS :
+            self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_300MS
+        elif self.theSensor.integration_time == adafruit_tsl2591.INTEGRATIONTIME_300MS :
+            self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_400MS
+        elif self.theSensor.integration_time == adafruit_tsl2591.INTEGRATIONTIME_400MS :
+            self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_500MS
+        else :
+            isMaxedOut = True
+        return isMaxedOut
+
+    def DecreaseSensitivity(self):
+        isMaxedOut=False       
+        if self.theSensor.integration_time == adafruit_tsl2591.INTEGRATIONTIME_500MS :
+            self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_400MS
+        elif self.theSensor.integration_time == adafruit_tsl2591.INTEGRATIONTIME_400MS :
+            self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_300MS
+        elif self.theSensor.integration_time == adafruit_tsl2591.INTEGRATIONTIME_300MS :
+            self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_200MS
+        elif self.theSensor.integration_time == adafruit_tsl2591.INTEGRATIONTIME_200MS :
+            self.theSensor.integration_time = adafruit_tsl2591.INTEGRATIONTIME_100MS
+        elif self.theSensor.gain == adafruit_tsl2591.GAIN_HIGH :
+            self.theSensor.gain = adafruit_tsl2591.GAIN_MED
+        elif self.theSensor.gain == adafruit_tsl2591.GAIN_MED :
+            self.theSensor.gain = adafruit_tsl2591.GAIN_LOW
         else:
-            print("Lux value is None. Possible sensor underrange or overrange.")   
+            isMaxedOut=True
+        return isMaxedOut
+
     def GetLUX(self):
-        lux = self.theSensor.lux
-        if(lux=="None"):
-            if(self.theSensor.gain==0):
-                self.SetLowGain()
-            elif(self.theSensor.gane==1):
-                self.SetHighGain()                
-            time.sleep(0.5)
+        try:
             lux = self.theSensor.lux
-        return lux
+            if(lux<1.0):
+                if (self.IncreaseSensitivity()):
+                    return lux
+                else :
+                    return -99
+            else:
+                return lux
+        # Circuitpython returns runtimeerror on overflow
+        except RuntimeError: 
+            if(self.DecreaseSensitivity()) :
+                return 100000
+            else :
+                return -99
 
 class TSL2561:
     def __init__(self,i2c):
@@ -233,22 +278,25 @@ class TSL2561:
         self.theSensor.integration_time=2
     def PrintAllInfo(self):
         #Get raw (luminosity) readings individually
-        visible = self.theSensor.visible
+        broadband = self.theSensor.broadband
         infrared = self.theSensor.infrared
-        fullspectrum = self.theSensor.fullspectrum
         # Get raw (luminosity) readings using tuple unpacking
         #broadband, infrared = tsl.luminosity
         # Get computed lux value (tsl.lux can return None or a float)
-        lux = self.theSensor.lux
-        print("Gain = {}".format(self.theSensor.gain))
-        print("Integration time = {}".format(self.theSensor.integration_time))
-        print("Visible Light = {}".format(visible))
-        print("Infrared = {}".format(infrared))
-        print("Full spectrum = {}".format(fullspectrum))
-        if lux is not None:
-            print("Lux = {}".format(lux))
-        else:
-            print("Lux value is None. Possible sensor underrange or overrange.") 
+        try:
+            lux = self.theSensor.lux
+            print("Chip ID = {}".format(self.theSensor.chip_id))
+            print("Enabled = {}".format(self.theSensor.enabled))
+            print("Gain = {}".format(self.theSensor.gain))
+            print("Integration time = {}".format(self.theSensor.integration_time))
+            print("Broadband = {}".format(broadband))
+            print("Infrared = {}".format(infrared))
+            if lux is not None:
+                print("Lux = {}".format(lux))
+            else:
+                print("Lux value is None. Possible sensor underrange or overrange.")   
+        except RuntimeError:
+            print("Runtime Error!")
     def SetHighGain(self):
         self.theSensor.gain=0
     def SetLowGain(self):
@@ -272,7 +320,8 @@ class MyRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         self._set_headers()
-        tmp = "<html><body>temp=%f;light=%f,humidity=%f</body></html>" % (self.server.temperature,self.server.light,self.server.humidity,)
+        tmp = "<html><body>temp=%f;light=%f;humidity=%f</body></html>" % (self.server.temperature,self.server.light,self.server.humidity,)
+        #tmp = "%d;%f;%f;%f" % (self.server.temperature,self.server.light,self.server.humidity)
         #self.wfile.write("<html><body><h1>hi!</h1></body></html>".encode())
         self.wfile.write(tmp.encode())
     def do_HEAD(self,s):
@@ -314,15 +363,36 @@ class SI7021:
         return self.theSensor.relative_humidity
 
 class MonitoringHardware():
-    def __init__(self):
+    def __init__(self,uartID):
         self.i2c = busio.I2C(board.SCL, board.SDA)
-        self.tsl = TSL2561(self.i2c)
+        self.tsl = TSL2591(self.i2c)
         self.si =  SI7021(self.i2c)
         self.theServer = MyServer()
-        self.theUART=MyUART(0x01)
+        self.theUART=MyUART(uartID)
         _thread.start_new_thread(self.theServer.Start,())
         _thread.start_new_thread(self.theUART.StartListening,())
     def UpdateReadings(self):
         self.temperature=self.si.GetTemperature()
-        self.light=self.tsl.GetLUX()
+        l=self.tsl.GetLUX()
+        while (l == -99) :
+            l=self.tsl.GetLUX()
+            time.sleep(1)
+        self.light = l
         self.humidity=self.si.GetHumidity()
+        ## The following two lines are for testing only.
+        ##tmp=self.theUART.GetDataString()
+        ##self.theUART.Write(tmp)
+    
+
+
+
+if __name__=="__main__" :
+    i2c = busio.I2C(board.SCL, board.SDA)
+    tsl = TSL2591(i2c)
+    #uart = MonitorClasses.MyUART(1)
+    while True:
+        #uart.Write("Hi there::")
+        #print("Hi there::")
+        tsl.PrintAllInfo()
+        time.sleep(2)
+    
