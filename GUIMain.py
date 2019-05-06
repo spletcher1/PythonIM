@@ -1,8 +1,10 @@
-import MonitorClasses
+import GUIClasses
+import HeadlessClasses
 import tkinter as tk
 
 UART_MONITOR_ID = 0x01
 UART_MONITOR_NAME = "Test incubator"
+UPDATE_INTERVAL_SEC=1
 
 class App():
     def __init__(self, master):
@@ -23,8 +25,8 @@ class App():
         self.fullscreen_button.grid(column=3,row=0)
         self.plotCanvas = tk.Canvas(master, width=800, height=480)
         self.plotCanvas.grid(columnspan=4,row=1)
-        self.thePlot=MonitorClasses.DataPlot("test",self.plotCanvas)
-        self.theHardware=MonitorClasses.MonitoringHardware(UART_MONITOR_ID)
+        self.thePlot=GUIClasses.DataPlot("test",self.plotCanvas)
+        self.theHardware=HeadlessClasses.MonitoringHardware(UART_MONITOR_ID)
         self.UpdateData()
     
     def toggle_fullscreen(self, event=None):
@@ -58,7 +60,7 @@ class App():
         self.theHardware.theServer.SetData(t,l,h)
         self.theHardware.theUART.SetData(t,l,h)
         self.thePlot.UpdatePlot()
-        self.master.after(1000, self.UpdateData)
+        self.master.after(UPDATE_INTERVAL_SEC*1000, self.UpdateData)
 
 
 root=tk.Tk()

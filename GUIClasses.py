@@ -1,12 +1,55 @@
-import tkinter as tk
-from tkinter import ttk
 import matplotlib.pyplot as plt
+import numpy as np
+import tkinter
+import matplotlib
+import tkinter as tk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import matplotlib.backends.tkagg as tkagg
-import matplotlib
+import HeadlessClasses
 
-import numpy as np
+
+
+class DataHistory:
+    def __init__(self):
+        self.temp=np.zeros(200)
+        self.humidity=np.zeros(200)
+        self.light=np.zeros(200)
+        self.fig, self.ax = plt.subplots(3,1,figsize=(10,5))  
+        self.ax[0].grid()
+        self.ax[1].grid()
+        self.ax[2].grid()
+        self.ax[0].set_ylabel("Temperature")
+        self.ax[1].set_title("Humidity")
+        self.ax[2].set_title("Light")      
+        mng=plt.get_current_fig_manager()
+        mng.resize(*mng.window.maxsize())
+        self.isPlotRunning = False
+        self.fig.show()
+        self.fig.canvas.draw()
+        plt.ion()        
+    def AddNewDataPoint(self,ttemp,tlight,thumidity):
+        self.temp=np.roll(self.temp,-1)
+        self.temp[199]=ttemp
+        self.light=np.roll(self.light,-1)
+        self.light[199]=tlight
+        self.humidity=np.roll(self.humidity,-1)
+        self.humidity[199]=thumidity
+        self.UpdatePlot()
+    def UpdatePlot(self):
+        self.ax[1].clear()
+        self.ax[2].clear()
+        self.ax[0].clear()
+        self.ax[0].set_ylabel("Temperature")
+        self.ax[1].set_ylabel("Humidity")
+        self.ax[2].set_ylabel("Light")       
+        self.ax[0].grid()
+        self.ax[1].grid()
+        self.ax[2].grid()
+        self.ax[0].plot(self.temp,'r-s')
+        self.ax[1].plot(self.humidity,'b-o')
+        self.ax[2].plot(self.light,'k-^')
+        self.fig.canvas.draw()
 
 class DataPlot():
     def __init__(self,name,canvas):
@@ -14,9 +57,9 @@ class DataPlot():
         self.temp=[0,0]
         self.humidity=[1,1]
         self.light=[2,2]
-        font = {'size' : 20}  
+        font = {'size' : 12}  
         matplotlib.rc('font', **font)
-        self.theFig = Figure(figsize=(20, 15), dpi=100)
+        self.theFig = Figure(figsize=(8, 4.35), dpi=100)
         self.axis=self.theFig.add_subplot(111)
         self.plotCanvas=canvas
         self.plotType="temp"
@@ -26,6 +69,7 @@ class DataPlot():
         self.theplot=self.draw_figure(self.plotCanvas,self.theFig)
     def UpdatePlot(self):
         self.ClearPlot()
+        self.axis.set_xlabel("Date")
         if self.plotType=="temp":
             self.axis.plot(self.temp,'r-s')
             self.axis.set_title("Temperature")
@@ -73,43 +117,3 @@ class DataPlot():
         # Return a handle which contains a reference to the photo object
         # which must be kept live or else the picture disappears
         return photo
-
-
-class App():
-    def __init__(self, master):
-        self.master=master
-        master.title("Incubator Data")
-        self.temp_button=tk.Button(master,text="Temperature",command=self.ShowTemperature,height=3, width=20)
-        self.humid_button=tk.Button(master,text="Humidity",command=self.ShowHumidity,height=3, width=20)
-        self.light_button=tk.Button(master,text="Light",command=self.ShowLight,height=3, width=20)
-        self.temp_button.grid()
-        self.humid_button.grid(column=1,row=0)
-        self.light_button.grid(column=2,row=0)
-        self.plotCanvas = tk.Canvas(master, width=2000, height=1500)
-        self.plotCanvas.grid(columnspan=3)
-        self.thePlot=DataPlot("test",self.plotCanvas)
-        self.UpdateData()
-    def getPlot(self):
-        return self.thePlot
-    def write_slogan(self):
-        print ("Tkinter is easy to use!")
-        self.thePlot.ClearPlot()
-    def ShowTemperature(self):
-        self.thePlot.plotType="temp"
-        self.thePlot.UpdatePlot()
-    def ShowHumidity(self):
-        self.thePlot.plotType="humidity"
-        self.thePlot.UpdatePlot()
-    def ShowLight(self):
-        self.thePlot.plotType="light"
-        self.thePlot.UpdatePlot()
-    def UpdateData(self):
-        self.thePlot.AddNewDataPoint(10,15,20)
-        self.thePlot.UpdatePlot()
-        self.master.after(1000, self.UpdateData)
-
-
-root=tk.Tk()
-myGui=App(root)
-root.mainloop()
-

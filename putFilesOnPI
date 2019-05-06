@@ -3,9 +3,11 @@
 # ETH=192.168.1.??
 # WIFI = 192.168.1.245
 
-#IP=192.168.1.245
-IP=192.168.0.99
+IP=192.168.1.245
+#IP=192.168.0.99
 
-pscp -pw dr0m3l ./MonitorClasses.py scott@$IP:Programming/Python/IncubatorMonitor/MonitorClasses.py
-pscp -pw dr0m3l ./MonitorMain.py scott@$IP:Programming/Python/IncubatorMonitor/MonitorMain.py
+pscp -pw dr0m3l ./GUIClasses.py scott@$IP:Programming/Python/IncubatorMonitor/GUIClasses.py
+pscp -pw dr0m3l ./HeadlessClasses.py scott@$IP:Programming/Python/IncubatorMonitor/HeadlessClasses.py
+pscp -pw dr0m3l ./GUIMain.py scott@$IP:Programming/Python/IncubatorMonitor/GUIMain.py
+pscp -pw dr0m3l ./HeadlessMain.py scott@$IP:Programming/Python/IncubatorMonitor/HeadlessMain.py
 
