@@ -268,12 +268,12 @@ class MonitoringHardware():
 
 
 if __name__=="__main__" :
-    i2c = busio.I2C(board.SCL, board.SDA)
-    tsl = TSL2591(i2c)
-    #uart = MonitorClasses.MyUART(1)
+    #i2c = busio.I2C(board.SCL, board.SDA)
+    #tsl = TSL2591(i2c)
+    uart = MyUART(1)
     while True:
-        #uart.Write("Hi there::")
-        #print("Hi there::")
-        tsl.PrintAllInfo()
+        uart.Write("Hi there::")
+        print("Hi there::")
+        #tsl.PrintAllInfo()
         time.sleep(2)
     
