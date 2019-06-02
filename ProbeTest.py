@@ -1,10 +1,13 @@
 import HeadlessClasses
 import time
+import sys
 
-UART_MONITOR_ID = 0x01
-UART_MONITOR_NAME = "Test incubator"
+if(sys.argv.__len__!=2):
+    print("Wrong argument value!")
+    exit()
 
-theHardware=HeadlessClasses.MonitoringHardware(UART_MONITOR_ID)
+monitor_id = sys.argv[1]
+theHardware=HeadlessClasses.MonitoringHardware(monitor_id)
 
 while True:
     theHardware.UpdateReadings()

@@ -1,10 +1,15 @@
 import GUIClasses
 import HeadlessClasses
 import tkinter as tk
+import sys
 
-UART_MONITOR_ID = 0x01
-UART_MONITOR_NAME = "Test incubator"
-UPDATE_INTERVAL_SEC=1
+UPDATE_INTERVAL_SEC=60
+
+if(sys.argv.__len__!=2):
+    print("Wrong argument value!")
+    exit()
+
+monitor_id = sys.argv[1]
 
 class App():
     def __init__(self, master):
@@ -26,7 +31,7 @@ class App():
         self.plotCanvas = tk.Canvas(master, width=800, height=480)
         self.plotCanvas.grid(columnspan=4,row=1)
         self.thePlot=GUIClasses.DataPlot("test",self.plotCanvas)
-        self.theHardware=HeadlessClasses.MonitoringHardware(UART_MONITOR_ID)
+        self.theHardware=HeadlessClasses.MonitoringHardware(monitor_id)
         self.UpdateData()
     
     def toggle_fullscreen(self, event=None):
@@ -61,6 +66,7 @@ class App():
         self.theHardware.theUART.SetData(t,l,h)
         self.thePlot.UpdatePlot()
         self.master.after(UPDATE_INTERVAL_SEC*1000, self.UpdateData)
+
 
 
 root=tk.Tk()

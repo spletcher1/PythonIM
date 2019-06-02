@@ -1,10 +1,15 @@
 import HeadlessClasses
 import time
+import sys
 
-UART_MONITOR_ID = 0x01
-UART_MONITOR_NAME = "Test incubator"
+UPDATE_INTERVAL_SEC=60
 
-theHardware=HeadlessClasses.MonitoringHardware(UART_MONITOR_ID)
+if(sys.argv.__len__!=2):
+    print("Wrong argument value!")
+    exit()
+
+monitor_id = sys.argv[1]
+theHardware=HeadlessClasses.MonitoringHardware(monitor_id)
 
 while True:
     theHardware.UpdateReadings()
@@ -13,5 +18,5 @@ while True:
     h=theHardware.humidity
     theHardware.theServer.SetData(t,l,h)
     theHardware.theUART.SetData(t,l,h)
-    time.sleep(60)
+    time.sleep(UPDATE_INTERVAL_SEC)
 
