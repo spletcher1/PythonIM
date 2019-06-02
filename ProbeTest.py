@@ -13,7 +13,7 @@ while True:
     h=theHardware.humidity
     theHardware.theServer.SetData(t,l,h)
     theHardware.theUART.SetData(t,l,h)
-    s= "Temp: %f   Humid: %f    Light:%f." % (t,l,h)
+    s= "Temp: %f   Humid: %f    Light:%f." % (t,h,l)
     print(s)
     time.sleep(3)
 

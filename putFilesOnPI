@@ -1,14 +1,18 @@
 #!/bin/bash
 
+UN=pi
+#UN=scott
 # ETH=192.168.1.??
 # WIFI = 192.168.1.245
 
 #IP=192.168.1.245
-IP=192.168.1.242
+IP=192.168.1.174
 #IP=192.168.0.99
 
-pscp -pw dr0m3l ./GUIClasses.py pi@$IP:Programming/Python/IncubatorMonitor/GUIClasses.py
-pscp -pw dr0m3l ./HeadlessClasses.py pi@$IP:Programming/Python/IncubatorMonitor/HeadlessClasses.py
-pscp -pw dr0m3l ./GUIMain.py pi@$IP:Programming/Python/IncubatorMonitor/GUIMain.py
-pscp -pw dr0m3l ./HeadlessMain.py pi@$IP:Programming/Python/IncubatorMonitor/HeadlessMain.py
+pscp -pw dr0m3l ./GUIClasses.py $UN@$IP:Programming/Python/IncubatorMonitor/GUIClasses.py
+pscp -pw dr0m3l ./HeadlessClasses.py $UN@$IP:Programming/Python/IncubatorMonitor/HeadlessClasses.py
+pscp -pw dr0m3l ./GUIMain.py $UN@$IP:Programming/Python/IncubatorMonitor/GUIMain.py
+pscp -pw dr0m3l ./HeadlessMain.py $UN@$IP:Programming/Python/IncubatorMonitor/HeadlessMain.py
+pscp -pw dr0m3l ./ProbeTest.py $UN@$IP:Programming/Python/IncubatorMonitor/ProbeTest.py
+pscp -pw dr0m3l ./UARTTest.py $UN@$IP:Programming/Python/IncubatorMonitor/UARTTest.py
 
