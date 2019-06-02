@@ -36,7 +36,7 @@ class MyUART:
                 print(tmp)
                 self.Write(tmp)
             else:
-                print('not for me')
+                print('ID=%d is not for me.' % ser_bytes[1])
                 #print(ser_bytes)
                 
 class TSL2591:

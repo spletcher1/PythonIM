@@ -5,11 +5,15 @@ import sys
 
 UPDATE_INTERVAL_SEC=60
 
-if(sys.argv.__len__!=2):
-    print("Wrong argument value!")
+if(sys.argv.__len__()!=2):
+    print("Wrong number of arguments!")
     exit()
 
-monitor_id = sys.argv[1]
+try:
+    monitor_id = int(sys.argv[1])
+except: 
+    print("Bad UART ID argument!")
+    exit()
 
 class App():
     def __init__(self, master):
