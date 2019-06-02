@@ -37,7 +37,7 @@ class MyUART:
                 self.Write(tmp)
             else:
                 print('not for me')
-                print(ser_bytes)
+                #print(ser_bytes)
                 
 class TSL2591:
     def __init__(self,i2c):
