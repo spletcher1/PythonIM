@@ -16,11 +16,6 @@ except:
 theHardware=HeadlessClasses.MonitoringHardware(monitor_id)
 
 while True:
-    theHardware.UpdateReadings()
-    t=theHardware.temperature
-    l=theHardware.light
-    h=theHardware.humidity
-    theHardware.theServer.SetData(t,l,h)
-    theHardware.theUART.SetData(t,l,h)
+    theHardware.UpdateReadings()   
     time.sleep(UPDATE_INTERVAL_SEC)
 

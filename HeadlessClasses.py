@@ -30,14 +30,18 @@ class MyUART:
         self.humidity=humidity
     def StartListening(self):
         while True:
-            ser_bytes=self.thePort.read(3)
-            if(ser_bytes[0]==self.startByte and ser_bytes[2]==self.endByte and ser_bytes[1]==self.ID):
-                tmp = self.GetDataString()
-                print(tmp)
-                self.Write(tmp)
+            ser_bytes=self.thePort.read()
+            if(ser_bytes[0]==self.startByte):
+                ser_bytes=self.thePort.read(2) 
+                if(ser_bytes[1]==self.endByte and ser_bytes[0]==self.ID):
+                    tmp = self.GetDataString()
+                    print(tmp)
+                    self.Write(tmp)
+                else:
+                    print('ID=%d is not for me.' % ser_bytes[1])
+                    #print(ser_bytes)
             else:
-                print('ID=%d is not for me.' % ser_bytes[1])
-                #print(ser_bytes)
+                print('Bad Packet')
                 
 class TSL2591:
     def __init__(self,i2c):
@@ -245,21 +249,37 @@ class SI7021:
 
 class MonitoringHardware():
     def __init__(self,uartID):
+        self.uartID = uartID
         self.i2c = busio.I2C(board.SCL, board.SDA)
         self.tsl = TSL2591(self.i2c)
         self.si =  SI7021(self.i2c)
-        self.theServer = MyServer()
-        self.theUART=MyUART(uartID)
-        _thread.start_new_thread(self.theServer.Start,())
-        _thread.start_new_thread(self.theUART.StartListening,())
+        if(self.uartID==0):
+            self.theServer = MyServer()
+            _thread.start_new_thread(self.theServer.Start,())
+        else:
+            self.theUART=MyUART(uartID)
+            _thread.start_new_thread(self.theUART.StartListening,())        
     def UpdateReadings(self):
-        self.temperature=self.si.GetTemperature()
-        l=self.tsl.GetLUX()
-        while (l == -99) :
+        testing=True
+        if(testing==False):
+            self.temperature=self.si.GetTemperature()
             l=self.tsl.GetLUX()
-            time.sleep(1)
-        self.light = l
-        self.humidity=self.si.GetHumidity()
+            counter=0
+            while (l == -99 and counter<10) :
+                l=self.tsl.GetLUX()
+                time.sleep(1)
+                counter+=1
+            self.light = l
+            self.humidity=self.si.GetHumidity()
+        else:
+            self.light=100
+            self.humidity=100
+            self.temperature=25
+        
+        if(self.uartID==0):
+            self.theServer.SetData(self.temperature,self.light,self.humidity)
+        else:
+            self.theUART.SetData(self.temperature,self.light,self.humidity)
         ## The following two lines are for testing only.
         ##tmp=self.theUART.GetDataString()
         ##self.theUART.Write(tmp)
