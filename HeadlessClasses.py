@@ -38,11 +38,10 @@ class MyUART:
                     print(tmp)
                     self.Write(tmp)
                 else:
-                    print('ID=%d is not for me.' % ser_bytes[1])
+                    print('ID=%d is not for me or endBye (=%d) incorrect.' % ser_bytes[1],  ser_bytes[1])
                     #print(ser_bytes)
             else:
                 print('Bad Packet')
-                
 class TSL2591:
     def __init__(self,i2c):
         self.__Initialize(i2c)
