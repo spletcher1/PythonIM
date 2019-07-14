@@ -30,15 +30,15 @@ class MyUART:
         self.humidity=humidity
     def StartListening(self):
         while True:
-            ser_bytes=self.thePort.read()
-            if(ser_bytes[0]==self.startByte):
+            ser_byte=self.thePort.read()
+            if(ser_byte==self.startByte):
                 ser_bytes=self.thePort.read(2) 
                 if(ser_bytes[1]==self.endByte and ser_bytes[0]==self.ID):
                     tmp = self.GetDataString()
                     print(tmp)
                     self.Write(tmp)
                 else:
-                    print('ID=%d is not for me or endBye (=%d) incorrect.' % ser_bytes[0],  ser_bytes[1])
+                    print('ID=%d is not for me or endBye (=%d) incorrect.' % (ser_bytes[0],  ser_bytes[1]))
                     #print(ser_bytes)
             else:
                 print('Bad Packet')
@@ -259,7 +259,7 @@ class MonitoringHardware():
             self.theUART=MyUART(uartID)
             _thread.start_new_thread(self.theUART.StartListening,())        
     def UpdateReadings(self):
-        testing=True
+        testing=False
         if(testing==False):
             self.temperature=self.si.GetTemperature()
             l=self.tsl.GetLUX()
