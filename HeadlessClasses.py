@@ -272,7 +272,7 @@ class MonitoringHardware():
             self.humidity=self.si.GetHumidity()
         else:
             self.light=100
-            self.humidity=100
+            self.humidity=50
             self.temperature=25
         
         if(self.uartID==0):
