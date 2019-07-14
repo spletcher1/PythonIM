@@ -31,7 +31,7 @@ class MyUART:
     def StartListening(self):
         while True:
             ser_byte=self.thePort.read()
-            if(ser_byte==self.startByte):
+            if(ser_byte[0]==self.startByte):
                 ser_bytes=self.thePort.read(2) 
                 if(ser_bytes[1]==self.endByte and ser_bytes[0]==self.ID):
                     tmp = self.GetDataString()
@@ -41,7 +41,7 @@ class MyUART:
                     print('ID=%d is not for me or endBye (=%d) incorrect.' % (ser_bytes[0],  ser_bytes[1]))
                     #print(ser_bytes)
             else:
-                print('Bad Packet')
+                print('Bad Packet %d', ser_byte[0])
 class TSL2591:
     def __init__(self,i2c):
         self.__Initialize(i2c)
