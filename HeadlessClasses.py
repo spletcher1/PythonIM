@@ -253,6 +253,7 @@ class MonitoringHardware():
         self.tsl = TSL2591(self.i2c)
         self.si =  SI7021(self.i2c)
         if(self.uartID==0):
+            print("Starting Server...")
             self.theServer = MyServer()
             _thread.start_new_thread(self.theServer.Start,())
         else:
