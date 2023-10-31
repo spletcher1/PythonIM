@@ -1,8 +1,9 @@
 import HeadlessClasses
 import time
 import sys
+import PRelay
 
-UPDATE_INTERVAL_SEC=60
+UPDATE_INTERVAL_SEC=10
 
 if(sys.argv.__len__()!=2):
     print("Wrong number of arguments!")
@@ -16,6 +17,8 @@ except:
 theHardware=HeadlessClasses.MonitoringHardware(monitor_id)
 
 while True:
+    print("Updating readings")
     theHardware.UpdateReadings()   
+    print("Done")
     time.sleep(UPDATE_INTERVAL_SEC)
 

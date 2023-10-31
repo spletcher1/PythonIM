@@ -9,6 +9,7 @@ import _thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import socketserver 
 import serial
+import PRelay
 
 class MyUART:
     def __init__(self, ID):
@@ -204,7 +205,10 @@ class MyRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         self._set_headers()
-        tmp = "<html><body>temp=%f;light=%f;humidity=%f</body></html>" % (self.server.temperature,self.server.light,self.server.humidity,)
+        if self.server.isRelayOn:
+            tmp = "<html><body>temp=%f;light=%f;humidity=%f;Relay=On</body></html>" % (self.server.temperature,self.server.light,self.server.humidity,)
+        else:
+            tmp = "<html><body>temp=%f;light=%f;humidity=%f;Relay=Off</body></html>" % (self.server.temperature,self.server.light,self.server.humidity,)
         #tmp = "%d;%f;%f;%f" % (self.server.temperature,self.server.light,self.server.humidity)
         #self.wfile.write("<html><body><h1>hi!</h1></body></html>".encode())
         self.wfile.write(tmp.encode())
@@ -222,10 +226,12 @@ class MyHTTPServer(HTTPServer):
         self.temperature = 1
         self.light=2
         self.humidity=3
-    def SetData(self,temp,light,humidity):
+        self.isRelayOn = False
+    def SetData(self,temp,light,humidity,isRelayOn):
         self.temperature = temp
         self.light=light
         self.humidity=humidity
+        self.isRelayOn=isRelayOn
 
 class MyServer():
     def __init__(self):
@@ -233,8 +239,8 @@ class MyServer():
         self.httpd = MyHTTPServer(self.server_address, MyRequestHandler)
     def Start(self):
         self.httpd.serve_forever()
-    def SetData(self,temp,light,humidity):
-        self.httpd.SetData(temp,light,humidity)
+    def SetData(self,temp,light,humidity,isRelayOn):
+        self.httpd.SetData(temp,light,humidity,isRelayOn)
     
 class SI7021:
     def __init__(self,i2c):
@@ -252,8 +258,8 @@ class MonitoringHardware():
         self.i2c = busio.I2C(board.SCL, board.SDA)
         self.tsl = TSL2591(self.i2c)
         self.si =  SI7021(self.i2c)
+        self.theRelay =  PRelay.PRelay()
         if(self.uartID==0):
-            print("Starting Server...")
             self.theServer = MyServer()
             _thread.start_new_thread(self.theServer.Start,())
         else:
@@ -275,9 +281,10 @@ class MonitoringHardware():
             self.light=100
             self.humidity=50
             self.temperature=25
-        
+        self.theRelay.UpdateRelays(self.temperature,self.light,self.humidity)
+
         if(self.uartID==0):
-            self.theServer.SetData(self.temperature,self.light,self.humidity)
+            self.theServer.SetData(self.temperature,self.light,self.humidity,self.theRelay.IsRelay0On())
         else:
             self.theUART.SetData(self.temperature,self.light,self.humidity)
         ## The following two lines are for testing only.
