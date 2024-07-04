@@ -2,25 +2,14 @@ import HeadlessClasses
 import time
 import sys
 
-if(sys.argv.__len__!=2):
-    print("Wrong number of arguments!")
-    exit()
 
-try:
-    monitor_id = int(sys.argv[1])
-except: 
-    print("Bad UART ID argument!")
-    exit()
-
-theHardware=HeadlessClasses.MonitoringHardware(monitor_id)
+theHardware=HeadlessClasses.MonitoringHardware()
 
 while True:
     theHardware.UpdateReadings()
     t=theHardware.temperature
     l=theHardware.light
-    h=theHardware.humidity
-    theHardware.theServer.SetData(t,l,h)
-    theHardware.theUART.SetData(t,l,h)
+    h=theHardware.humidity   
     s= "Temp: %f   Humid: %f    Light:%f." % (t,h,l)
     print(s)
     time.sleep(3)
