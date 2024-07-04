@@ -1,0 +1,28 @@
+Create /home/scott/IncubatorControl directory
+clone PythonIM into that directory, so the path to python files is /home/scott/IncubatorControl/PythonIM
+https://github.com/spletcher1/PythonIM
+(note the active personal access token is in the OneNote Folder)
+
+Create a python virtual environment in IncubatorControl directory
+
+cd /home/scott/IncubatorControl
+python3 -m venv IncubatorControl
+
+then activate into
+source /bin/activate
+
+Then install required python3 packages
+
+# Packages required for Incubator Control
+# pip3 install adafruit-blinka
+# pip3 install adafruit-circuitpython-tsl2591
+# pip3 install adafruit-circuitpython-si7021
+# pip3 install Phidget22
+
+Make sure PythonIM/RunIncubatorControl.sh has executable permissions
+
+Add the following in etc/rc.local to run the script at boot
+/home/scott/IncubatorControl/PythonIM/RunIncubatorControl.sh
+
+
+Make sure you set the target temperature in IncubatorControl.py
